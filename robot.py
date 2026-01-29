@@ -6,58 +6,52 @@ class Robot:
         self.location = "outside"
         self.holding = None
 
-    # ----- Basic actions -----
+    # ----- Movement -----
     def move_to(self, place):
         print(f"Robot moves to {place}")
         self.location = place
 
-    def pick_up(self, item):
+    # ----- Actions with validation -----
+    def pick_up(self, item, env):
+        if self.location != env.room:
+            print("❌ Robot is not in the kitchen")
+            return
+
+        if self.holding is not None:
+            print("❌ Robot is already holding something")
+            return
+
+        if not env.has_item(item):
+            print(f"❌ {item} not found in kitchen")
+            return
+
         print(f"Robot picks up {item}")
         self.holding = item
+        env.remove_item(item)
 
     def put_down(self, place):
+        if self.holding is None:
+            print("❌ Robot is holding nothing")
+            return
+
         print(f"Robot puts {self.holding} into {place}")
         self.holding = None
 
-    # ----- Tasks -----
+    # ----- Task -----
     def clean_up_kitchen(self, env):
         self.move_to("kitchen")
 
-        for item in env.dirty_items:
-            self.pick_up(item)
+        for item in list(env.dirty_items):
+            self.pick_up(item, env)
             self.put_down("sink")
 
-        env.dirty_items.clear()
         print("Kitchen is clean now")
 
-    def go_to_kitchen(self, env):
-        self.move_to("kitchen")
-        print("Robot is now in the kitchen")
 
-
-# ===== TASK PLANNER =====
-TASK_MAP = {
-    "Clean-up the kitchen": Robot.clean_up_kitchen,
-    "Go to the kitchen": Robot.go_to_kitchen
-}
-
-
-def execute_task(robot, task_name, env):
-    print(f"\nReceived task: {task_name}")
-
-    if task_name in TASK_MAP:
-        TASK_MAP[task_name](robot, env)
-    else:
-        print("Task not supported")
-
-
-# ===== RUN SIMULATION =====
+# ===== RUN =====
 env = KitchenEnvironment()
 robot = Robot()
 
 env.show_state()
-
-execute_task(robot, "Go to the kitchen", env)
-execute_task(robot, "Clean-up the kitchen", env)
-
+robot.clean_up_kitchen(env)
 env.show_state()
